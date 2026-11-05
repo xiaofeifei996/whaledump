@@ -28,7 +28,20 @@ static void whale_dump_main(void) {
 
         logMsg(@"=== WhaleDump start ===");
 
-        const struct mach_header_64 *hdr = (const struct mach_header_64 *)_dyld_get_image_header(0);
+        const struct mach_header_64 *hdr = NULL;
+        uint32_t imgCount = _dyld_image_count();
+        for (uint32_t i = 0; i < imgCount; i++) {
+            const char *name = _dyld_get_image_name(i);
+            if (name && strstr(name, "Whale.app/Whale")) {
+                hdr = (const struct mach_header_64 *)_dyld_get_image_header(i);
+                logMsg([NSString stringWithFormat:@"image[%u]=%s", i, name]);
+                break;
+            }
+        }
+        if (!hdr) {
+            hdr = (const struct mach_header_64 *)_dyld_get_image_header(0);
+            logMsg(@"fallback to image 0");
+        }
         if (!hdr || hdr->magic != MH_MAGIC_64) {
             logMsg(@"bad main header");
             return;
